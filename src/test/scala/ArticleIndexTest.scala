@@ -5,6 +5,8 @@ import org.scalatest.FunSuite
 class ArticleIndexTest extends FunSuite {
   test ("works") {
     ArtistIndex
-    FileUtils.deleteDirectory(new File("./data"))
+    FileUtils.deleteDirectory(new File("./home/data"))
+    ArtistIndexWithKuromoji
+    FileUtils.deleteDirectory(new File("./home/data"))
   }
 }

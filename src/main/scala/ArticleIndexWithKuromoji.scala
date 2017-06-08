@@ -12,9 +12,7 @@ import org.elasticsearch.common.settings.Settings
 import com.sksamuel.elastic4s.circe._
 import io.circe.generic.auto._
 
-case class Artist(name: String, description: String)
-
-object ArtistIndex {
+object ArtistIndexWithKuromoji {
 
   val clusterName = "artists"
   val homePath = "./home"
@@ -36,8 +34,14 @@ object ArtistIndex {
     createIndex("bands").mappings(
       mapping("artist") as(
         textField("name"),
-        textField("description")
+        textField("description") analyzer "my_analyzer"
       )
+  )
+  .analysis(
+    CustomAnalyzerDefinition(
+      "my_analyzer",
+      KuromojiTokenizer
+    )
   )
   }.await
 
