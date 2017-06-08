@@ -1,6 +1,6 @@
 scalaVersion := "2.12.2"
 
-val elastic4sVersion = "5.4.0"
+val elastic4sVersion = "5.4.3"
 libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
   "com.sksamuel.elastic4s" %% "elastic4s-tcp" % elastic4sVersion,
