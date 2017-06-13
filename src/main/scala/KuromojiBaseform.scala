@@ -1,8 +1,5 @@
-import java.nio.file.Paths
-
-
 import com.sksamuel.elastic4s.analyzers.CustomAnalyzerDefinition
-import com.sksamuel.elastic4s.{ElasticsearchClientUri, TcpClient}
+import com.sksamuel.elastic4s.{ ElasticsearchClientUri, TcpClient }
 import com.sksamuel.elastic4s.searches.RichSearchResponse
 import com.sksamuel.elastic4s.embedded.LocalNode
 
@@ -14,55 +11,64 @@ import io.circe.generic.auto._
 
 import filter.KuromojiBaseformFilter
 
-object KuromojiBaseform {
-  val clusterName = "artists"
-  val homePath = "./home"
-
-  val settings =  Map(
-    "cluster.name" -> clusterName,
-    "path.home" -> homePath,
-    "path.repo" -> Paths.get(homePath).resolve("repo").toString,
-    "path.data" -> Paths.get(homePath).resolve("data").toString
-  )
-
-  val localNode = LocalNode(settings)
-
-  val client = localNode.elastic4sclient()
-
+object KuromojiBaseform extends ExperimentsSupport {
   import com.sksamuel.elastic4s.ElasticDsl._
 
-  client.execute {
-    createIndex("bands").mappings(
-      mapping("artist") as(
-        textField("name"),
-        textField("description") analyzer "my_analyzer"
+  println("--------- with kuromoji_baseform ------------------")
+  connect { client =>
+    client.execute {
+      createIndex("bands").mappings(
+        mapping("artist") as (
+          textField("name"),
+          textField("description") analyzer "my_analyzer"
+        )
       )
-  )
-  .analysis(
-    CustomAnalyzerDefinition(
-      "my_analyzer",
-      KuromojiTokenizer,
-      KuromojiBaseformFilter
-    )
-  )
-  }.await
-
-  client.execute {
-    indexInto("bands" / "artists") doc Artist("山田太郎", "歌い放題") refresh(RefreshPolicy.IMMEDIATE)
-  }.await
-
-  val resp = client.execute {
-    search("bands" / "artists") query termQuery("description", "歌う")
+        .analysis(
+          CustomAnalyzerDefinition(
+            "my_analyzer",
+            KuromojiTokenizer,
+            KuromojiBaseformFilter
+          )
+        )
     }.await
 
-    println("---- Search Hit Parsed ----")
-    resp.to[Artist].foreach(println)
+    client.execute {
+      indexInto("bands" / "artists") doc Artist("山田太郎", "歌い放題") refresh (RefreshPolicy.IMMEDIATE)
+    }.await
 
-    import io.circe.Json
-    import io.circe.parser._
-    println("---- Response as JSON ----")
-    println(decode[Json](resp.original.toString).right.get.spaces2)
+    val resp = client.execute {
+      search("bands" / "artists") query termQuery("description", "歌う")
+    }.await
 
-    client.close()
+    format(resp)
+  }
+
+  println("--------- without kuromoji_baseform ------------------")
+  connect { client =>
+    client.execute {
+      createIndex("bands").mappings(
+        mapping("artist") as (
+          textField("name"),
+          textField("description") analyzer "my_analyzer"
+        )
+      )
+        .analysis(
+          CustomAnalyzerDefinition(
+            "my_analyzer",
+            KuromojiTokenizer
+          )
+        )
+    }.await
+
+    client.execute {
+      indexInto("bands" / "artists") doc Artist("山田太郎", "歌い放題") refresh (RefreshPolicy.IMMEDIATE)
+    }.await
+
+    val resp = client.execute {
+      search("bands" / "artists") query termQuery("description", "歌う")
+    }.await
+
+    format(resp)
+  }
 }
 

@@ -3,7 +3,7 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.FunSuite
 
 class ArticleIndexSpec extends FunSuite {
-  test ("works") {
+  test("works") {
     ArtistIndex
     FileUtils.deleteDirectory(new File("./home/data"))
     ArtistIndexWithKuromoji
