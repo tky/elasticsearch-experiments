@@ -1,8 +1,7 @@
 import java.nio.file.Paths
 
-
 import com.sksamuel.elastic4s.analyzers.CustomAnalyzerDefinition
-import com.sksamuel.elastic4s.{ElasticsearchClientUri, TcpClient}
+import com.sksamuel.elastic4s.{ ElasticsearchClientUri, TcpClient }
 import com.sksamuel.elastic4s.searches.RichSearchResponse
 import com.sksamuel.elastic4s.embedded.LocalNode
 
@@ -17,7 +16,7 @@ object ArtistIndex {
   val clusterName = "artists"
   val homePath = "./home"
 
-  val settings =  Map(
+  val settings = Map(
     "cluster.name" -> clusterName,
     "path.home" -> homePath,
     "path.repo" -> Paths.get(homePath).resolve("repo").toString,
@@ -32,28 +31,28 @@ object ArtistIndex {
 
   client.execute {
     createIndex("bands").mappings(
-      mapping("artist") as(
+      mapping("artist") as (
         textField("name"),
         textField("description")
       )
-  )
+    )
   }.await
 
   client.execute {
-    indexInto("bands" / "artists") doc Artist("山田太郎", "東京で活躍していたアーティストです") refresh(RefreshPolicy.IMMEDIATE)
+    indexInto("bands" / "artists") doc Artist("山田太郎", "東京で活躍していたアーティストです") refresh (RefreshPolicy.IMMEDIATE)
   }.await
 
   val resp = client.execute {
     search("bands" / "artists") query termQuery("description", "東京")
-    }.await
+  }.await
 
-    println("---- Search Hit Parsed ----")
-    resp.to[Artist].foreach(println)
+  println("---- Search Hit Parsed ----")
+  resp.to[Artist].foreach(println)
 
-    import io.circe.Json
-    import io.circe.parser._
-    println("---- Response as JSON ----")
-    println(decode[Json](resp.original.toString).right.get.spaces2)
+  import io.circe.Json
+  import io.circe.parser._
+  println("---- Response as JSON ----")
+  println(decode[Json](resp.original.toString).right.get.spaces2)
 
-    client.close()
-  }
+  client.close()
+}
