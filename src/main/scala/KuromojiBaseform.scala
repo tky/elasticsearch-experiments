@@ -12,8 +12,9 @@ import org.elasticsearch.common.settings.Settings
 import com.sksamuel.elastic4s.circe._
 import io.circe.generic.auto._
 
-object ArtistIndex {
+import filter.KuromojiBaseformFilter
 
+object KuromojiBaseform {
   val clusterName = "artists"
   val homePath = "./home"
 
@@ -34,17 +35,24 @@ object ArtistIndex {
     createIndex("bands").mappings(
       mapping("artist") as(
         textField("name"),
-        textField("description")
+        textField("description") analyzer "my_analyzer"
       )
+  )
+  .analysis(
+    CustomAnalyzerDefinition(
+      "my_analyzer",
+      KuromojiTokenizer,
+      KuromojiBaseformFilter
+    )
   )
   }.await
 
   client.execute {
-    indexInto("bands" / "artists") doc Artist("山田太郎", "東京で活躍していたアーティストです") refresh(RefreshPolicy.IMMEDIATE)
+    indexInto("bands" / "artists") doc Artist("山田太郎", "歌い放題") refresh(RefreshPolicy.IMMEDIATE)
   }.await
 
   val resp = client.execute {
-    search("bands" / "artists") query termQuery("description", "東京")
+    search("bands" / "artists") query termQuery("description", "歌う")
     }.await
 
     println("---- Search Hit Parsed ----")
@@ -56,4 +64,5 @@ object ArtistIndex {
     println(decode[Json](resp.original.toString).right.get.spaces2)
 
     client.close()
-  }
+}
+
